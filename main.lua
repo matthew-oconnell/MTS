@@ -89,7 +89,7 @@ local function equipIfNeeded(t1, slot)
   else
     local current_t1 = GetInventoryItemID("player", slot)
     if current_t1 ~= t1 then
-      debug("Equipping Trinket", getLink(t1), "to slot", slot)
+      print("Equipping trinket to slot", slot)
       mst.am_currently_swapping[slot] = true
       EquipItemByName(t1, slot)
     else
@@ -98,18 +98,24 @@ local function equipIfNeeded(t1, slot)
   end
 end
 
-local function equipSpecTrinkets(spec)
+local function equipSpecTrinketInSlot(spec, slot)
+  print("Equipping trinket in slot", slot)
   debug("Equipping trinkets")
-  local t1 = mst.specs[spec]["Trinket1_id"]
-  local t2 = mst.specs[spec]["Trinket2_id"]
-  equipIfNeeded(t1, 13)
-  equipIfNeeded(t2, 14)
+  if slot == 13 then
+    local t1 = mst.specs[spec]["Trinket1_id"]
+    equipIfNeeded(t1, 13)
+  end
+  if slot == 14 then
+    local t2 = mst.specs[spec]["Trinket2_id"]
+    equipIfNeeded(t2, 14)
+  end
 end
 
-local function specChanged(slot)
+local function specChanged()
   local spec = getCurrentSpecName()
   if haveStateForSpec(spec) then
-    equipSpecTrinkets(spec)
+    equipSpecTrinketInSlot(spec, 13)
+    equipSpecTrinketInSlot(spec, 14)
   else
     print("mst: No trinkets saved for", spec)
     print("mst: Going to save your current ones for now")
@@ -123,15 +129,14 @@ local function equipChanged(slot)
     return
   end
   setCurrentSpecCurrentTrinkets()
-  printAllSavedSpecs()
 end
 
 local function enterGameWorld() 
-  printAllSavedSpecs()
   local spec = getCurrentSpecName()
   if next(mst) == nil or next(mst.specs) == nil or next(mst.specs[spec]) == nil then
     setCurrentSpecCurrentTrinkets()
   end
+  printAllSavedSpecs()
 end
 
 local function removeNone() 
