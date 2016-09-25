@@ -1,8 +1,53 @@
-mst = {};
+mst = {}
+mst.specs = {}
+mst.debug = false
+mst.am_currently_swapping = {}
+mst.am_currently_swapping["13"] = false
+mst.am_currently_swapping["14"] = false
 
 local function debug(...)
   if mst.debug then
-    print(...)
+    print("[MST:DEBUG]",...)
+  end
+end
+
+local function createEmptySpec(spec)
+  if mst.specs[spec] == nil then
+    mst.specs[spec] = {}
+  end
+end
+
+local function getLink(item)
+  local name, link = GetItemInfo(item)
+  if link == nil then
+    link = name
+  end
+  return link
+end
+
+local function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
+
+local function printAllSavedSpecs()
+  if mst.specs ~= nil then
+    for spec,values in pairs(mst.specs) do
+      if values ~= nil then
+        local name = values["spec_name"]
+        local t1 = values["Trinket1_id"]
+        local t2 = values["Trinket2_id"]
+        print(name, getLink(t1), getLink(t2))
+      end
+    end
   end
 end
 
@@ -12,10 +57,6 @@ local function getCurrentTrinkets()
   return t1, t2
 end
 
-local function getLink(item)
-  local name, link = GetItemInfo(item)
-  return link
-end
 
 local function getCurrentSpecName()
   local currentSpec = GetSpecialization()
@@ -23,53 +64,43 @@ local function getCurrentSpecName()
   return currentSpecName
 end
 
-local function printCurrentSpec()
-  print("Your current spec:", getCurrentSpecName())
-end
-
 local function setCurrentSpecCurrentTrinkets()
   local t1, t2 = getCurrentTrinkets()
   local spec = getCurrentSpecName()
-  mst[spec] = {}
-  mst[spec]["spec"] = spec
-  mst[spec]["Trinket1_id"] = t1
-  mst[spec]["Trinket2_id"] = t2
-  print("mst: Spec",spec, "using trinkets")
-  print(getLink(t1), getLink(t2))
-end
-
-local function printSpecState(spec)
-  print("mst: spec:", mst[spec]["spec"])
-  print("mst: first trinket:", getLink(mst[spec]["Trinket1_id"]))
-  print("mst: second trinket:", getLink(mst[spec]["Trinket2_id"]))
+  createEmptySpec(spec)
+  mst.specs[spec]["spec_name"] = spec
+  mst.specs[spec]["Trinket1_id"] = t1
+  mst.specs[spec]["Trinket2_id"] = t2
 end
 
 local function haveStateForSpec(spec)
-  return mst[spec] ~= nil
+  return mst.specs[spec] ~= nil
 end
 
-local function enterGameWorld() 
-  mst.debug = false
-  local spec = getCurrentSpecName()
-  if next(mst) == nil or next(mst[spec]) == nil then
-    setCurrentSpecCurrentTrinkets()
+local function equipIfNeeded(t1, slot)
+  if mst.am_currently_swapping[slot] == false then
+    return 
+  else
+    local current_t1 = GetInventoryItemID("player", slot)
+    if current_t1 ~= t1 then
+      debug("Equipping Trinket", getLink(t1), "to slot", slot)
+      mst.am_currently_swapping[slot] = true
+      EquipItemByName(t1, slot)
+    else
+      debug("Already have", getLink(t1),"equipped")
+    end
   end
 end
 
 local function equipSpecTrinkets(spec)
-  local t1 = mst[spec]["Trinket1_id"]
-  local t2 = mst[spec]["Trinket2_id"]
-  local current_t1 = GetInventoryItemID("player", 13)
-  local current_t2 = GetInventoryItemID("player", 14)
-  if current_t1 ~= t1 then
-    EquipItemByName(t1, 13)
-  end
-  if current_t2 ~= t2 then
-    EquipItemByName(t2, 14)
-  end
+  debug("Equipping trinkets")
+  local t1 = mst.specs[spec]["Trinket1_id"]
+  local t2 = mst.specs[spec]["Trinket2_id"]
+  equipIfNeeded(t1, 13)
+  equipIfNeeded(t2, 14)
 end
 
-local function specChanged()
+local function specChanged(slot)
   local spec = getCurrentSpecName()
   print("mst: You changed spec to", spec)
   if haveStateForSpec(spec) then
@@ -81,8 +112,20 @@ local function specChanged()
   end
 end
 
-local function equipChanged()
+local function equipChanged(slot)
+  if slot ~= 13 or slot ~= 13 then
+    return
+  end
   setCurrentSpecCurrentTrinkets()
+  printAllSavedSpecs()
+end
+
+local function enterGameWorld() 
+  printAllSavedSpecs()
+  local spec = getCurrentSpecName()
+  if next(mst) == nil or next(mst.specs) == nil or next(mst.specs[spec]) == nil then
+    setCurrentSpecCurrentTrinkets()
+  end
 end
 
 local event_entering_world = "PLAYER_ENTERING_WORLD"
@@ -92,15 +135,17 @@ local f = CreateFrame("Frame", nil, UIParent)
 f:RegisterEvent(event_entering_world)
 f:RegisterEvent(event_change_spec)
 f:RegisterEvent(event_equip_change)
-f:SetScript("OnEvent", function(self, event, glStr, value)
+f:SetScript("OnEvent", function(self, event, ...)
   if event == event_entering_world then
-    debug("mst: PLAYER_ENTERING_WORLD")
+    debug("EVENT PLAYER_ENTERING_WORLD")
+    mst.debug = false
     enterGameWorld()
   elseif event == event_change_spec then 
-    debug("mst: PLAYER_SPECIALIZATION_CHANGED")
+    debug("EVENT PLAYER_SPECIALIZATION_CHANGED")
     specChanged() 
   elseif event == event_equip_change then
-    debug("mst: PLAYER_EQUIPMENT_CHANGED")
-    equipChanged()
+    slot = ...
+    debug("EVENT PLAYER_EQUIPMENT_CHANGED, slot", slot)
+    equipChanged(slot)
   end
 end)
