@@ -18,11 +18,14 @@ local function createEmptySpec(spec)
 end
 
 local function getLink(item)
+  if item == nil then
+    return nil
+  end
   local name, link = GetItemInfo(item)
   if link == nil then
     link = name
   end
-  return link
+  return name
 end
 
 local function dump(o)
@@ -67,6 +70,9 @@ end
 local function setCurrentSpecCurrentTrinkets()
   local t1, t2 = getCurrentTrinkets()
   local spec = getCurrentSpecName()
+  if spec == nil then 
+    return
+  end
   createEmptySpec(spec)
   mst.specs[spec]["spec_name"] = spec
   mst.specs[spec]["Trinket1_id"] = t1
@@ -102,7 +108,6 @@ end
 
 local function specChanged(slot)
   local spec = getCurrentSpecName()
-  print("mst: You changed spec to", spec)
   if haveStateForSpec(spec) then
     equipSpecTrinkets(spec)
   else
@@ -129,6 +134,16 @@ local function enterGameWorld()
   end
 end
 
+local function removeNone() 
+  if mst.specs ~= nil then
+    for spec,values in pairs(mst.specs) do
+      if spec == "None" then
+        mst.specs[spec] = nil
+      end
+    end
+  end
+end
+
 local event_entering_world = "PLAYER_ENTERING_WORLD"
 local event_change_spec = "PLAYER_SPECIALIZATION_CHANGED"
 local event_equip_change = "PLAYER_EQUIPMENT_CHANGED"
@@ -141,6 +156,7 @@ f:SetScript("OnEvent", function(self, event, ...)
     debug("EVENT PLAYER_ENTERING_WORLD")
     mst.debug = false
     enterGameWorld()
+    removeNone()
   elseif event == event_change_spec then 
     debug("EVENT PLAYER_SPECIALIZATION_CHANGED")
     specChanged() 
