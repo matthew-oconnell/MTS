@@ -7,13 +7,13 @@ local function debug(...)
 end
 
 local function getCurrentTrinkets()
-  t1 = GetInventoryItemID("player", 13)
-  t2 = GetInventoryItemID("player", 14)
+  local t1 = GetInventoryItemID("player", 13)
+  local t2 = GetInventoryItemID("player", 14)
   return t1, t2
 end
 
 local function getLink(item)
-  name, link = GetItemInfo(item)
+  local name, link = GetItemInfo(item)
   return link
 end
 
