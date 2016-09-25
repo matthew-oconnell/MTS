@@ -113,7 +113,8 @@ local function specChanged(slot)
 end
 
 local function equipChanged(slot)
-  if slot ~= 13 or slot ~= 13 then
+  if slot ~= 13 and slot ~= 14 then
+    debug("Changed slot", slot, "doing nothing")
     return
   end
   setCurrentSpecCurrentTrinkets()
