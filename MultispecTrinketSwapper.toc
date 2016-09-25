@@ -1,0 +1,7 @@
+## Interface: 70000
+## Title: MultispecTrinketSwapper
+## Author: Matthew O'Connell
+## Version: 0.1
+## SavedVariablesPerCharacter: mst
+
+main.lua
