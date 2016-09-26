@@ -60,7 +60,6 @@ local function getCurrentTrinkets()
   return t1, t2
 end
 
-
 local function getCurrentSpecName()
   local currentSpec = GetSpecialization()
   local currentSpecName = currentSpec and select(2, GetSpecializationInfo(currentSpec)) or "None"
@@ -89,7 +88,7 @@ local function equipIfNeeded(t1, slot)
   else
     local current_t1 = GetInventoryItemID("player", slot)
     if current_t1 ~= t1 then
-      print("Equipping trinket to slot", slot)
+      debug("Equipping trinket to slot", slot)
       mst.am_currently_swapping[slot] = true
       EquipItemByName(t1, slot)
     else
@@ -99,7 +98,6 @@ local function equipIfNeeded(t1, slot)
 end
 
 local function equipSpecTrinketInSlot(spec, slot)
-  print("Equipping trinket in slot", slot)
   debug("Equipping trinkets")
   if slot == 13 then
     local t1 = mst.specs[spec]["Trinket1_id"]
@@ -117,8 +115,6 @@ local function specChanged()
     equipSpecTrinketInSlot(spec, 13)
     equipSpecTrinketInSlot(spec, 14)
   else
-    print("mst: No trinkets saved for", spec)
-    print("mst: Going to save your current ones for now")
     setCurrentSpecCurrentTrinkets()
   end
 end
